@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pink Flowers with Animated Lyrics</title>
+    <style>
+        *,
+        *::after,
+        *::before {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-bg: #0b1522;
+            --line-color: #122131;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            overflow: hidden;
+            perspective: 1000px;
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Music Controller Button */
+        .audio-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 200;
+            padding: 10px 20px;
+            background-color: #ff5e7e;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 94, 126, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .audio-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Animated Lyrics Container */
+        .lyric-container {
+            position: fixed;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            text-align: center;
+            z-index: 100;
+            height: 80px;
+        }
+
+        .lyric-text {
+            color: #fff;
+            font-size: 2.2rem;
+            font-weight: bold;
+            text-shadow: 0 0 15px rgba(255, 94, 126, 0.6);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .lyric-text.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Background Visuals */
+        .night {
+            position: fixed;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 100%;
+            filter: blur(0.1vmin);
+            background-image: radial-gradient(ellipse at top, transparent 60%, rgba(10, 10, 26, 0.3)), 
+                              radial-gradient(ellipse at bottom, var(--color-bg), rgba(114, 21, 52, 0.2)), 
+                              radial-gradient(circle at 50% 50%, #e27d92, #0b1522 70%);
+        }
+
+        .flowers {
+            position: relative;
+            transform: scale(0.75);
+            display: flex;
+            align-items: flex-end;
+            margin-bottom: -50px;
+        }
+
+        /* Flower Animations */
+        .flower { opacity: 0; }
+        .playing .flower--1 { animation: growing-animation 2s ease-out forwards; }
+        .playing .flower--2 { transform: rotate(-15deg); transform-origin: bottom center; animation: growing-animation 2s 0.5s ease-out forwards; }
+        .playing .flower--3 { transform: rotate(15deg); transform-origin: bottom center; animation: growing-animation 2s 0.8s ease-out forwards; }
+
+        .flower__line {
+            width: 1.5vmin;
+            background-image: linear-gradient(to top, rgba(0, 0, 0, 0.2), #122232, #1d364e);
+            border-radius: 4vmin;
+            position: relative;
+        }
+
+        .flower--1 .flower__line { height: 55vmin; }
+        .flower--2 .flower__line { height: 45vmin; }
+        .flower--3 .flower__line { height: 50vmin; }
+
+        .playing .flower__head {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translate(-50%, -100%) scale(0);
+            width: 15vmin;
+            height: 15vmin;
+            animation: bloom-animation 2s 1.5s ease-out forwards;
+        }
+
+        .flower__petal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            background-image: linear-gradient(to bottom, #ff5e7e, #ff2a55, var(--color-bg));
+            border-radius: 50% 50% 0 50%;
+            transform-origin: bottom right;
+            opacity: 0.9;
+            box-shadow: inset 0 0 1vmin rgba(255, 255, 255, 0.2);
+        }
+
+        .flower__petal--1 { width: 8vmin; height: 8vmin; transform: translate(-50%, -100%) rotate(0deg); }
+        .flower__petal--2 { width: 8vmin; height: 8vmin; transform: translate(-50%, -100%) rotate(45deg); }
+        .flower__petal--3 { width: 8vmin; height: 8vmin; transform: translate(-50%, -100%) rotate(90deg); }
+        .flower__petal--4 { width: 8vmin; height: 8vmin; transform: translate(-50%, -100%) rotate(135deg); }
+        .flower__petal--5 { width: 8vmin; height: 8vmin; transform: translate(-50%, -100%) rotate(180deg); }
+        .flower__petal--6 { width: 8vmin; height: 8vmin; transform: translate(-50%, -100%) rotate(225deg); }
+        .flower__petal--7 { width: 8vmin; height: 8vmin; transform: translate(-50%, -100%) rotate(270deg); }
+        .flower__petal--8 { width: 8vmin; height: 8vmin; transform: translate(-50%, -100%) rotate(315deg); }
+
+        .flower__center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4vmin;
+            height: 4vmin;
+            background-color: #ffca36;
+            border-radius: 50%;
+            box-shadow: 0 0 2vmin rgba(255, 202, 54, 0.8);
+            z-index: 10;
+        }
+
+        .flower__leaf {
+            position: absolute;
+            width: 6vmin;
+            height: 3vmin;
+            background-image: linear-gradient(to right, #1d364e, #122232);
+            border-radius: 0 100% 0 100%;
+            top: 40%;
+            left: 100%;
+            transform-origin: left center;
+            transform: rotate(20deg) scale(0);
+        }
+
+        .playing .flower__leaf { animation: leaf-animation 1.5s 1.2s ease-out forwards; }
+
+        .flower__leaf--2 {
+            top: 60%;
+            left: auto;
+            right: 100%;
+            transform-origin: right center;
+            border-radius: 100% 0 100% 0;
+            transform: rotate(-20deg) scale(0);
+        }
+
+        @keyframes growing-animation { 0% { opacity: 0; } 100% { opacity: 1; } }
+        @keyframes bloom-animation { 0% { transform: translate(-50%, -100%) scale(0); } 100% { transform: translate(-50%, -100%) scale(1); } }
+        @keyframes leaf-animation { 0% { transform: rotate(20deg) scale(0); } 100% { transform: rotate(20deg) scale(1); } }
+    </style>
+</head>
+<body>
+
+    <button class="audio-btn" id="playBtn">🌸 I-play ang Kanta</button>
+    
+    <!-- AUDIO FILE MO -->
+    <audio id="bgMusic" src="secret.mp3"></audio>
+
+    <div class="lyric-container">
+        <div class="lyric-text" id="lyricBox">Click the button to start...</div>
+    </div>
+
+    <div class="night"></div>
+
+    <div class="flowers" id="flowerContainer">
+        <!-- Flower 2 (Kaliwa) -->
+        <div class="flower flower--2">
+            <div class="flower__line">
+                <div class="flower__head">
+                    <div class="flower__petal flower__petal--1"></div><div class="flower__petal flower__petal--2"></div>
+                    <div class="flower__petal flower__petal--3"></div><div class="flower__petal flower__petal--4"></div>
+                    <div class="flower__petal flower__petal--5"></div><div class="flower__petal flower__petal--6"></div>
+                    <div class="flower__petal flower__petal--7"></div><div class="flower__petal flower__petal--8"></div>
+                    <div class="flower__center"></div>
+                </div>
+                <div class="flower__leaf flower__leaf--1"></div><div class="flower__leaf flower__leaf--2"></div>
+            </div>
+        </div>
+
+        <!-- Flower 1 (Gitna) -->
+        <div class="flower flower--1">
+            <div class="flower__line">
+                <div class="flower__head">
+                    <div class="flower__petal flower__petal--1"></div><div class="flower__petal flower__petal--2"></div>
+                    <div class="flower__petal flower__petal--3"></div><div class="flower__petal flower__petal--4"></div>
+                    <div class="flower__petal flower__petal--5"></div><div class="flower__petal flower__petal--6"></div>
+                    <div class="flower__petal flower__petal--7"></div><div class="flower__petal flower__petal--8"></div>
+                    <div class="flower__center"></div>
+                </div>
+                <div class="flower__leaf flower__leaf--1"></div><div class="flower__leaf flower__leaf--2"></div>
+            </div>
+        </div>
+
+        <!-- Flower 3 (Kanan) -->
+        <div class="flower flower--3">
+            <div class="flower__line">
+                <div class="flower__head">
+                    <div class="flower__petal flower__petal--1"></div><div class="flower__petal flower__petal--2"></div>
+                    <div class="flower__petal flower__petal--3"></div><div class="flower__petal flower__petal--4"></div>
+                    <div class="flower__petal flower__petal--5"></div><div class="flower__petal flower__petal--6"></div>
+                    <div class="flower__petal flower__petal--7"></div><div class="flower__petal flower__petal--8"></div>
+                    <div class="flower__center"></div>
+                </div>
+                <div class="flower__leaf flower__leaf--1"></div><div class="flower__leaf flower__leaf--2"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const audio = document.getElementById('bgMusic');
+        const playBtn = document.getElementById('playBtn');
+        const lyricBox = document.getElementById('lyricBox');
+        const flowerContainer = document.getElementById('flowerContainer');
+
+        // Ginawa nating mas mabagal nang kaunti yung pasok ng bawat linya
+        const lyricsTiming = [
+            { time: 0, text: "That I should've bought you flowers... 🌸" },
+            { time: 3.5, text: "And held your hand... 🤝" },
+            { time: 6.8, text: "Should've gave you all my hours... ⏳" },
+            { time: 10.0, text: "When I had the chance... ⚡" },
+            { time: 13.5, text: "Take you to every party... ✨" },
+            { time: 17.0, text: "'Cause all you wanted to do was dance... 💃" },
+            { time: 21.5, text: "Now my baby's dancing... 💔" },
+            { time: 25.0, text: "But she's dancing with another man. 🚶‍♂️" }
+        ];
+
+        playBtn.addEventListener('click', () => {
+            if (audio.paused) {
+                audio.play();
+                playBtn.innerText = "⏸ Pause Music";
+                flowerContainer.classList.add('playing');
+            } else {
+                audio.pause();
+                playBtn.innerText = "🌸 I-play ang Kanta";
+            }
+        });
+
+        audio.addEventListener('timeupdate', () => {
+            const currentTime = audio.currentTime;
+            
+            let currentLyric = lyricsTiming[0].text;
+            for (let i = 0; i < lyricsTiming.length; i++) {
+                if (currentTime >= lyricsTiming[i].time) {
+                    currentLyric = lyricsTiming[i].text;
+                }
+            }
+
+            if (lyricBox.innerText !== currentLyric) {
+                lyricBox.classList.remove('active');
+                setTimeout(() => {
+                    lyricBox.innerText = currentLyric;
+                    lyricBox.classList.add('active');
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>
